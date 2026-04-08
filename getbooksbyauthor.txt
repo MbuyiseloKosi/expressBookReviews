@@ -1,0 +1,5 @@
+Command:
+curl http://localhost:3000/books/author/John
+
+Output:
+[{"title":"Node Basics","author":"John Doe","reviews":{}}]

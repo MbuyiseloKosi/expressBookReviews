@@ -1,0 +1,5 @@
+Command:
+curl -X PUT http://localhost:3000/books/review/111 -H "Authorization: YOUR_TOKEN" -H "Content-Type: application/json" -d "{\"review\":\"Great book\"}"
+
+Output:
+{"message":"Review added/updated"}

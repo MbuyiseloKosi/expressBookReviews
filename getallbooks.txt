@@ -1,0 +1,3 @@
+Command: curl http://localhost:3000/books
+
+Output: {"111":{"title":"Node Basics","author":"John Doe","reviews":{}},"222":{"title":"Learn Express","author":"Jane Smith","reviews":{}}}
