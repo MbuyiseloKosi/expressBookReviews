@@ -1,153 +1,113 @@
-// =======================
-// SETUP
-// =======================
-// 1. npm init -y
-// 2. npm install express jsonwebtoken express-session body-parser
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const path = require('path');
 
-const express = require("express");
-const jwt = require("jsonwebtoken");
-const session = require("express-session");
-const bodyParser = require("body-parser");
+// Import your general.js functions
+// Ensure general.js is in the same folder as index.js
+const general = require('./general');
 
 const app = express();
-const PORT = 3000;
-const SECRET = "secretkey";
+const PORT = process.env.PORT || 3000;
 
+// Middleware
+app.use(cors());
 app.use(bodyParser.json());
-app.use(session({ secret: "sessionsecret", resave: false, saveUninitialized: true }));
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// =======================
-// DATA (IN-MEMORY)
-// =======================
-let users = [];
+// --- BOOK ROUTES ---
+// This handles: GET /api/books, GET /api/books?isbn=..., etc.
+app.get('/api/books', (req, res) => {
+    const { isbn, author, title } = req.query;
 
-let books = {
-  "111": { title: "Node Basics", author: "John Doe", reviews: {} },
-  "222": { title: "Learn Express", author: "Jane Smith", reviews: {} },
-};
-
-// =======================
-// MIDDLEWARE
-// =======================
-function authenticateToken(req, res, next) {
-  const token = req.headers["authorization"];
-  if (!token) return res.status(403).json({ message: "Token required" });
-
-  jwt.verify(token, SECRET, (err, user) => {
-    if (err) return res.status(403).json({ message: "Invalid token" });
-    req.user = user;
-    next();
-  });
-}
-
-// =======================
-// AUTH ROUTES
-// =======================
-app.post("/register", (req, res) => {
-  const { username, password } = req.body;
-
-  if (users.find(u => u.username === username)) {
-    return res.status(400).json({ message: "User exists" });
-  }
-
-  users.push({ username, password });
-  res.json({ message: "User registered" });
+    // If query params exist, use the specific Promise-based functions
+    if (isbn) {
+        general.getBookByISBN(isbn)
+            .then(data => res.json(data))
+            .catch(err => res.status(500).json({ error: err.message }));
+    } else if (author) {
+        general.getBookByAuthor(author)
+            .then(data => res.json(data))
+            .catch(err => res.status(500).json({ error: err.message }));
+    } else if (title) {
+        general.getBookByTitle(title)
+            .then(data => res.json(data))
+            .catch(err => res.status(500).json({ error: err.message }));
+    } else {
+        // No query params -> Get All (Async/Await function)
+        general.getAllBooks()
+            .then(data => res.json(data))
+            .catch(err => res.status(500).json({ error: err.message }));
+    }
 });
 
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
+// --- MOCK USER ROUTES (For Testing) ---
+// Since we don't have your DB setup, we use a simple in-memory store for registration/login
+const users = [];
+let tokenCounter = 0;
 
-  const user = users.find(u => u.username === username && u.password === password);
-
-  if (!user) return res.status(401).json({ message: "Invalid credentials" });
-
-  const token = jwt.sign({ username }, SECRET, { expiresIn: "1h" });
-  res.json({ token });
+app.post('/api/users/register', (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: "Username and password required" });
+    if (users.find(u => u.username === username)) return res.status(400).json({ error: "User already exists" });
+    
+    users.push({ username, password });
+    res.json({ message: "User registered successfully" });
 });
 
-// =======================
-// BOOK ROUTES (ASYNC)
-// =======================
-
-// Get all books
-app.get("/books", async (req, res) => {
-  const data = await new Promise(resolve => setTimeout(() => resolve(books), 100));
-  res.json(data);
+app.post('/api/users/login', (req, res) => {
+    const { username, password } = req.body;
+    const user = users.find(u => u.username === username && u.password === password);
+    if (!user) return res.status(401).json({ error: "Invalid credentials" });
+    
+    // Generate a simple mock token for testing
+    const token = `mock-jwt-token-${Date.now()}-${Math.random()}`;
+    res.json({ token });
 });
 
-// Get by ISBN
-app.get("/books/isbn/:isbn", async (req, res) => {
-  const book = await new Promise(resolve => setTimeout(() => resolve(books[req.params.isbn]), 100));
-  if (!book) return res.status(404).json({ message: "Not found" });
-  res.json(book);
+// --- MOCK REVIEW ROUTES (For Testing) ---
+const reviews = [];
+
+app.get('/api/reviews', (req, res) => {
+    const { bookId } = req.query;
+    if (bookId) {
+        res.json(reviews.filter(r => r.bookId === bookId));
+    } else {
+        res.json(reviews);
+    }
 });
 
-// Get by author
-app.get("/books/author/:author", async (req, res) => {
-  const result = Object.values(books).filter(b => b.author.toLowerCase().includes(req.params.author.toLowerCase()));
-  res.json(result);
+app.post('/api/reviews', (req, res) => {
+    const { bookId, comment, rating } = req.body;
+    // Check for auth header (mock check)
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const newReview = {
+        id: reviews.length + 1,
+        bookId,
+        comment,
+        rating,
+        user: "testuser"
+    };
+    reviews.push(newReview);
+    res.json({ message: "Review added", review: newReview });
 });
 
-// Get by title
-app.get("/books/title/:title", async (req, res) => {
-  const result = Object.values(books).filter(b => b.title.toLowerCase().includes(req.params.title.toLowerCase()));
-  res.json(result);
+app.delete('/api/reviews/:id', (req, res) => {
+    const id = parseInt(req.params.id);
+    const index = reviews.findIndex(r => r.id === id);
+    if (index === -1) return res.status(404).json({ error: "Review not found" });
+    
+    reviews.splice(index, 1);
+    res.json({ message: "Review deleted" });
 });
 
-// Get reviews
-app.get("/books/review/:isbn", (req, res) => {
-  const book = books[req.params.isbn];
-  if (!book) return res.status(404).json({ message: "Not found" });
-  res.json(book.reviews);
+// Start Server
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
 });
 
-// =======================
-// PROTECTED ROUTES
-// =======================
-
-// Add or update review
-app.put("/books/review/:isbn", authenticateToken, (req, res) => {
-  const isbn = req.params.isbn;
-  const review = req.body.review;
-  const username = req.user.username;
-
-  if (!books[isbn]) return res.status(404).json({ message: "Book not found" });
-
-  books[isbn].reviews[username] = review;
-  res.json({ message: "Review added/updated" });
-});
-
-// Delete review
-app.delete("/books/review/:isbn", authenticateToken, (req, res) => {
-  const isbn = req.params.isbn;
-  const username = req.user.username;
-
-  if (!books[isbn] || !books[isbn].reviews[username]) {
-    return res.status(403).json({ message: "Not allowed" });
-  }
-
-  delete books[isbn].reviews[username];
-  res.json({ message: "Review deleted" });
-});
-
-// =======================
-// START SERVER
-// =======================
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
-// =======================
-// TEST WITH CURL
-// =======================
-/*
-Register:
-curl -X POST http://localhost:3000/register -H "Content-Type: application/json" -d '{"username":"user1","password":"1234"}'
-
-Login:
-curl -X POST http://localhost:3000/login -H "Content-Type: application/json" -d '{"username":"user1","password":"1234"}'
-
-Get books:
-curl http://localhost:3000/books
-
-Add review:
-curl -X PUT http://localhost:3000/books/review/111 -H "Authorization: TOKEN" -H "Content-Type: application/json" -d '{"review":"Great book"}'
-*/
+module.exports = app;
