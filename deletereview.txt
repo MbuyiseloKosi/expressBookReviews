@@ -1,5 +1,4 @@
-Command:
-curl -X DELETE http://localhost:3000/books/review/111 -H "Authorization: YOUR_TOKEN"
+Command: curl.exe -s -c cookies.txt -b cookies.txt -X DELETE http://localhost:5000/customer/auth/review/1 -H "Content-Type: application/json"
 
 Output:
-{"message":"Review deleted"}
+{"message":"Review for ISBN 1 deleted successfully by testuser"}

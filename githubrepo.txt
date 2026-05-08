@@ -1,1 +1,12 @@
-https://github.com/MbuyiseloKosi/expressBookReviews
+Command: curl.exe -s https://api.github.com/repos/MbuyiseloKosi/expressBookReviews
+
+Output:
+{
+  "id": 1204773829,
+  "name": "expressBookReviews",
+  "full_name": "MbuyiseloKosi/expressBookReviews",
+  "fork": true,
+  "parent": {
+    "full_name": "ibm-developer-skills-network/expressBookReviews"
+  }
+}

@@ -1,5 +1,4 @@
-Command:
-curl http://localhost:3000/books/review/111
+Command: curl.exe -s -X GET http://localhost:5000/review/1
 
 Output:
-{}
+{"reviews":{}}

@@ -1,5 +1,4 @@
-Command:
-curl -X PUT http://localhost:3000/books/review/111 -H "Authorization: YOUR_TOKEN" -H "Content-Type: application/json" -d "{\"review\":\"Great book\"}"
+Command: curl.exe -s -c cookies.txt -b cookies.txt -X PUT "http://localhost:5000/customer/auth/review/1?review=This+book+is+excellent!" -H "Content-Type: application/json"
 
 Output:
-{"message":"Review added/updated"}
+{"message":"Review for ISBN 1 added/updated successfully by testuser","reviews":{"testuser":"This book is excellent!"}}

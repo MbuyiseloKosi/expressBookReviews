@@ -1,5 +1,4 @@
-Command:
-curl -X POST http://localhost:3000/login -H "Content-Type: application/json" -d "{\"username\":\"user1\",\"password\":\"1234\"}"
+Command: curl.exe -s -c cookies.txt -X POST http://localhost:5000/customer/login -H "Content-Type: application/json" -d '{\"username\":\"testuser\",\"password\":\"testpass123\"}'
 
 Output:
-{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIxIiwiaWF0IjoxNzc1NjQ2NTc1LCJleHAiOjE3NzU2NTAxNzV9.d-MLnaYsOaUBwn7USdBzXXgT9lZ-aNkBS9HdJv1GjNg"}
+{"message":"User successfully logged in","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc4MjI3ODkyLCJleHAiOjE3NzgyMzE0OTJ9.cjmHkc0f6jfU6wABCQdrKPBvP4xEFKkION_WlvendPQ"}
